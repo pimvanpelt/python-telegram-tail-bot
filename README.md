@@ -17,6 +17,7 @@ A simple Python Telegram Tail Bot, or _pttb_ for short, that:
 sudo apt install python3-pip
 pip install pyinstaller
 pip install argparse
+pip install pyyaml
 pip install python-telegram-bot --upgrade
 ./pttb --config ./pttconfig.yaml
 ```

@@ -38,7 +38,12 @@ def main():
     if args.debug:
         logger.debug("Arguments: %s" % args)
 
-    cfg = Config(config=args.config).read()
+    cfg = Config(config=args.config)
+    if not cfg.read():
+        logger.error("Aborting")
+        sys.exit(3)
+    logger.info("Exiting successfully. A job well done!")
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()
