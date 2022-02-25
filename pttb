@@ -28,7 +28,7 @@ except ImportError:
     print("ERROR: install ptb manually: sudo pip install python-telegram-bot --upgrade")
     sys.exit(2)
 
-global stats
+global stats, cfg
 stats = { 'starttime': 0, 'loglines_read': 0, 'incidents_created': 0, 'incidents_silenced': 0, 'incidents_sent': 0 }
 
 def setup_logger(debug=False):
@@ -42,26 +42,32 @@ def setup_logger(debug=False):
 def bot_cmd_start(update: Update, context: CallbackContext):
     context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
 
+
 def bot_cmd_stats(update: Update, context: CallbackContext):
     global stats
 
     time_str = datetime.utcfromtimestamp(stats['starttime']).strftime('%Y-%m-%d %H:%M:%S UTC')
-    mystats = stats
+    mystats = stats.copy()
     mystats['starttime'] = time_str
 
     msg = "<pre>%s</pre>" % mystats
     context.bot.send_message(chat_id=update.effective_chat.id, text=msg, parse_mode=ParseMode.HTML)
 
-def setup_bot(logger, cfg):
+
+def setup_bot(logger):
+    global cfg
+
     bot = Updater(token=cfg.token_get())
     bot.dispatcher.add_handler(CommandHandler('start', bot_cmd_start))
     bot.dispatcher.add_handler(CommandHandler('stats', bot_cmd_stats))
     bot.start_polling()
+    bot.dispatcher.bot.send_message(chat_id=cfg.chatid_get(), text="Hello, I'm ready to gobble up some logs")
     return bot
 
 
-def main_tail(logger, args, cfg, bot):
-    global stats
+def main_tail(logger, args, bot):
+    global stats, cfg
+
     if not os.path.exists(args.file):
         logging.warning("file %s currently does not exist" % args.file)
 
@@ -112,6 +118,8 @@ def main_tail(logger, args, cfg, bot):
     return
 
 def main():
+    global cfg
+
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-v', dest='verbose', action='store_true', help="""Enable verbosity, default False""")
     parser.add_argument('-d', dest='debug', action='store_true', help="""Enable debug, default False""")
@@ -129,9 +137,9 @@ def main():
         logging.error("Aborting")
         sys.exit(3)
 
-    bot = setup_bot(logger, cfg)
+    bot = setup_bot(logger)
 
-    main_tail(logger, args, cfg, bot)
+    main_tail(logger, args, bot)
 
     logging.info("Exiting successfully. A job well done!")
     sys.exit(0)
