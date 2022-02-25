@@ -4,6 +4,10 @@
 import sys
 import logging
 from config import Config
+import time
+import subprocess
+import select
+import os
 
 try:
     import argparse
@@ -25,6 +29,22 @@ def setup_logging(debug=False):
     logger.addHandler(ch)
     return logger
 
+def main_tail(logger, args, bot):
+    if not os.path.exists(args.file):
+        logger.warning("file %s currently does not exist" % args.file)
+
+    f = subprocess.Popen(['tail', '-F', '-n', '0', args.file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = select.poll()
+    p.register(f.stdout)
+
+    while True:
+        if p.poll(1.0):
+            line = f.stdout.readline().strip()
+            logger.debug("Tail: %s" % line)
+        else:
+          logger.debug("timeout")
+          time.sleep(0.25)
+    return
 
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
@@ -32,6 +52,7 @@ def main():
     parser.add_argument('-d', dest='debug', action='store_true', help="""Enable debug, default False""")
     parser.add_argument('-c', '--config', dest='config', default="/etc/pttb/pttb.yaml", type=str, 
             help="""Location of the YAML config file, default /etc/pttb/pttb.yaml""")
+    parser.add_argument('--file', "-f", dest='file', required=True, type=str, help="""Logfile to perform tail on""")
 
     args = parser.parse_args()
     logger = setup_logging(debug=args.debug)
@@ -42,6 +63,10 @@ def main():
     if not cfg.read():
         logger.error("Aborting")
         sys.exit(3)
+
+    bot = None
+    main_tail(logger, args, bot)
+
     logger.info("Exiting successfully. A job well done!")
     sys.exit(0)
 
