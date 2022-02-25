@@ -20,7 +20,7 @@ except ImportError:
 global stats
 stats = { 'starttime': 0, 'loglines_read': 0, 'incidents_created': 0, 'incidents_silenced': 0, 'incidents_sent': 0 }
 
-def setup_logging(debug=False):
+def setup_logger(debug=False):
     if debug:
         level = logging.DEBUG
     else:
@@ -93,7 +93,7 @@ def main():
     parser.add_argument('--file', "-f", dest='file', required=True, type=str, help="""Logfile to perform tail on""")
 
     args = parser.parse_args()
-    logger = setup_logging(debug=args.debug)
+    logger = setup_logger(debug=args.debug)
     if args.debug:
         logger.debug("Arguments: %s" % args)
 
