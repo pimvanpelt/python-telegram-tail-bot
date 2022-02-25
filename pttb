@@ -53,6 +53,23 @@ def bot_cmd_stats(update: Update, context: CallbackContext):
     msg = "<pre>%s</pre>" % mystats
     context.bot.send_message(chat_id=update.effective_chat.id, text=msg, parse_mode=ParseMode.HTML)
 
+def bot_cmd_trigger(update: Update, context: CallbackContext):
+    global cfg
+
+    triggers = cfg.trigger_list()
+    args = ' '.join(context.args)
+    logging.info("args: %s" % args)
+    ## TODO(pim) - use positional arguments
+    msg = "%d trigger(s) follow:\n" % len(triggers)
+    msg += "<pre>\n"
+    idx = 0
+    for t in triggers:
+        msg += "idx %d: \n" % idx
+        msg += "  * regexp='%(regexp)s'\n  * duration=%(duration)d\n  * message='%(message)s'\n" % t
+        idx += 1
+    msg += "</pre>\n"
+
+    context.bot.send_message(chat_id=update.effective_chat.id, text=msg, parse_mode=ParseMode.HTML)
 
 def setup_bot(logger):
     global cfg
@@ -60,6 +77,7 @@ def setup_bot(logger):
     bot = Updater(token=cfg.token_get())
     bot.dispatcher.add_handler(CommandHandler('start', bot_cmd_start))
     bot.dispatcher.add_handler(CommandHandler('stats', bot_cmd_stats))
+    bot.dispatcher.add_handler(CommandHandler('trigger', bot_cmd_trigger))
     bot.start_polling()
     bot.dispatcher.bot.send_message(chat_id=cfg.chatid_get(), text="Hello, I'm ready to gobble up some logs")
     return bot
