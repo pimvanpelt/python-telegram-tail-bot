@@ -35,14 +35,7 @@ def setup_logger(debug=False):
         level = logging.DEBUG
     else:
         level = logging.INFO
-    logger = logging.getLogger('pttb')
-    logger.setLevel(level)
-    formatter = logging.Formatter('[%(levelname)-8s] %(name)17s - %(funcName)-15s: %(message)s')
-    ch = logging.StreamHandler()
-    ch.setLevel(level)
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-    return logger
+    logging.basicConfig(format='[%(levelname)-8s] %(name)s - %(funcName)s: %(message)s', level=level)
 
 
 def bot_cmd_start(update: Update, context: CallbackContext):
@@ -50,7 +43,6 @@ def bot_cmd_start(update: Update, context: CallbackContext):
 
 
 def setup_bot(logger, cfg):
-    logging.basicConfig(format='[%(levelname)-8s] %(name)17s - %(funcName)-15s: %(message)s', level=logging.INFO)
     bot = Updater(token=cfg.token_get())
     bot.dispatcher.add_handler(CommandHandler('start', bot_cmd_start))
     bot.start_polling()
@@ -60,7 +52,7 @@ def setup_bot(logger, cfg):
 def main_tail(logger, args, cfg, bot):
     global stats
     if not os.path.exists(args.file):
-        logger.warning("file %s currently does not exist" % args.file)
+        logging.warning("file %s currently does not exist" % args.file)
 
     f = subprocess.Popen(['tail', '-F', '-n', '0', args.file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     p = select.poll()
@@ -72,14 +64,14 @@ def main_tail(logger, args, cfg, bot):
         if p.poll(1.0):
             line = f.stdout.readline().decode('utf-8').strip()
             stats['loglines_read'] += 1
-            logger.debug("line: %s" % line)
+            logging.debug("line: %s" % line)
 
             for t in cfg.trigger_list():
                 if re.search(t['regexp'], line):
-                    logger.debug("trigger '%s' matched line '%s'" % (t['regexp'], line))
+                    logging.debug("trigger '%s' matched line '%s'" % (t['regexp'], line))
                     if not t['regexp'] in incidents:
                         i = Incident(t['regexp'], t['duration'], t['message'])
-                        logger.info("incident #%d created for trigger '%s'" % (i.getid(), t['regexp']))
+                        logging.info("incident #%d created for trigger '%s'" % (i.getid(), t['regexp']))
                         incidents[t['regexp']] = i
                         stats['incidents_created'] += 1
                     incidents[t['regexp']].feedlog(line)
@@ -90,18 +82,18 @@ def main_tail(logger, args, cfg, bot):
             if incidents[k].expired():
                 i = incidents[k].getid()
                 msg = incidents[k].render()
-                logger.debug("incident #%d expired, message '%s'" % (i, repr(msg)))
+                logging.debug("incident #%d expired, message '%s'" % (i, repr(msg)))
 
                 silence = False
                 for s in cfg.silence_list():
                     if re.search(s['regexp'], msg):
-                        logger.debug("silence '%s' matched message for incident #%d" % (s['regexp'], i))
+                        logging.debug("silence '%s' matched message for incident #%d" % (s['regexp'], i))
                         silence = True
                 if silence:
-                    logger.warning("silencing notification for incident #%d" % i)
+                    logging.warning("silencing notification for incident #%d" % i)
                     stats['incidents_silenced'] += 1
                 else:
-                    logger.info("sending notification for incident #%d" % i)
+                    logging.info("sending notification for incident #%d" % i)
                     bot.dispatcher.bot.send_message(chat_id=cfg.chatid_get(), text=msg, parse_mode=ParseMode.HTML)
                     stats['incidents_sent'] += 1
 
@@ -119,18 +111,18 @@ def main():
     args = parser.parse_args()
     logger = setup_logger(debug=args.debug)
     if args.debug:
-        logger.debug("Arguments: %s" % args)
+        logging.debug("Arguments: %s" % args)
 
     cfg = Config(config=args.config)
     if not cfg.read():
-        logger.error("Aborting")
+        logging.error("Aborting")
         sys.exit(3)
 
     bot = setup_bot(logger, cfg)
 
     main_tail(logger, args, cfg, bot)
 
-    logger.info("Exiting successfully. A job well done!")
+    logging.info("Exiting successfully. A job well done!")
     sys.exit(0)
 
 if __name__ == "__main__":
