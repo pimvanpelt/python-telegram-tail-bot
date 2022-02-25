@@ -1,0 +1,16 @@
+[Unit]
+Description=Python Telegram Tail Bot (for syslog-ng)
+After=network.target
+ConditionPathExists=/etc/pttb/pttb.yaml
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/pttb --config /etc/pttb/pttb.yaml --file /var/log/ipng.log
+User=nobody
+Group=adm
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
