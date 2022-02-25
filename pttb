@@ -5,6 +5,7 @@ import sys
 import logging
 from config import Config
 from incident import Incident
+from datetime import datetime
 import time
 import subprocess
 import select
@@ -41,10 +42,20 @@ def setup_logger(debug=False):
 def bot_cmd_start(update: Update, context: CallbackContext):
     context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
 
+def bot_cmd_stats(update: Update, context: CallbackContext):
+    global stats
+
+    time_str = datetime.utcfromtimestamp(stats['starttime']).strftime('%Y-%m-%d %H:%M:%S UTC')
+    mystats = stats
+    mystats['starttime'] = time_str
+
+    msg = "<pre>%s</pre>" % mystats
+    context.bot.send_message(chat_id=update.effective_chat.id, text=msg, parse_mode=ParseMode.HTML)
 
 def setup_bot(logger, cfg):
     bot = Updater(token=cfg.token_get())
     bot.dispatcher.add_handler(CommandHandler('start', bot_cmd_start))
+    bot.dispatcher.add_handler(CommandHandler('stats', bot_cmd_stats))
     bot.start_polling()
     return bot
 
