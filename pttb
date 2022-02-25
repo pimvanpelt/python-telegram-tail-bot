@@ -23,6 +23,7 @@ import subprocess
 import select
 import os
 import re
+import shlex
 
 try:
     import argparse
@@ -68,18 +69,62 @@ def bot_cmd_stats(update: Update, context: CallbackContext):
 def bot_cmd_trigger(update: Update, context: CallbackContext):
     global cfg
 
-    triggers = cfg.trigger_list()
-    args = ' '.join(context.args)
-    logging.info("args: %s" % args)
-    ## TODO(pim) - use positional arguments
-    msg = "%d trigger(s) follow:\n" % len(triggers)
-    msg += "<pre>\n"
-    idx = 0
-    for t in triggers:
-        msg += "idx %d: \n" % idx
-        msg += "  * regexp='%(regexp)s'\n  * duration=%(duration)d\n  * message='%(message)s'\n" % t
-        idx += 1
-    msg += "</pre>\n"
+    argv = shlex.split(update.message.text)[1:]
+    logging.info("text: %s" % argv)
+    msg = ""
+    if len(argv) == 0:
+        triggers = cfg.trigger_list()
+        msg += "%d trigger(s) follow:\n" % len(triggers)
+        msg += "<pre>\n"
+        idx = 0
+        for t in triggers:
+            msg += "idx %d: \n" % idx
+            msg += "  * regexp='%(regexp)s'\n  * duration=%(duration)d\n  * message='%(message)s'\n" % t
+            idx += 1
+        msg += "</pre>\n"
+    elif argv[0].lower() == "add":
+        subcmd = argv.pop(0)
+        duration = 10
+        message = "(unset)"
+        err = None
+        if len(argv) < 1 or len(argv) > 3:
+            err = "Expecting 1-3 arguments\n"
+        if len(argv) > 0:
+            regexp = argv.pop(0)
+        if len(argv) > 0:
+            if not argv[0].isnumeric():
+                err = "Expecting second argument as a number\n"
+            else:
+                duration = int(argv.pop(0))
+        if len(argv) > 0:
+            message = argv.pop(0)
+        if err:
+            msg += "Error: %s" % err
+        else:
+            ret, retmsg = cfg.trigger_add(regexp, duration, message)
+            if not ret:
+                msg = "Error: %s\n" % retmsg
+            else:
+                cfg.write()
+                msg = "Success: %s\n" % retmsg
+
+    elif argv[0].lower() == "del":
+        if len(argv) != 2:
+            msg += "Error: Expecting excatly 1 argument\n"
+        elif not argv[1].isnumeric():
+            msg += "Error: Expecting first argument as a number\n"
+        else:
+            idx = int(argv[1])
+            ret, retmsg = cfg.trigger_del(idx)
+            if not ret:
+                msg += "Error: %s\n" % retmsg
+            else:
+                msg += "Success: %s\n" % retmsg
+    else:
+        msg += "Usage: \n"
+        msg += "<code>/trigger</code> - List triggers\n"
+        msg += "<code>/trigger add '&lt;regex&gt;' &lt;duration&gt; '&lt;message&gt;'</code> - Add a new trigger with a quoted regular expression with a coalesce duration in seconds (may be 0), and a quoted message\n"
+        msg += "<code>/trigger del &lt;idx&gt;</code> - Remove a trigger by its listed index\n"
 
     context.bot.send_message(chat_id=update.effective_chat.id, text=msg, parse_mode=ParseMode.HTML)
 
