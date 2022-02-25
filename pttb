@@ -17,6 +17,16 @@ except ImportError:
     print("ERROR: install argparse manually: sudo pip install argparse")
     sys.exit(2)
 
+try:
+    from telegram import Update
+    from telegram import ParseMode
+    from telegram.ext import Updater
+    from telegram.ext import CallbackContext
+    from telegram.ext import CommandHandler
+except ImportError:
+    print("ERROR: install ptb manually: sudo pip install python-telegram-bot --upgrade")
+    sys.exit(2)
+
 global stats
 stats = { 'starttime': 0, 'loglines_read': 0, 'incidents_created': 0, 'incidents_silenced': 0, 'incidents_sent': 0 }
 
@@ -33,6 +43,19 @@ def setup_logger(debug=False):
     ch.setFormatter(formatter)
     logger.addHandler(ch)
     return logger
+
+
+def bot_cmd_start(update: Update, context: CallbackContext):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
+
+
+def setup_bot(logger, cfg):
+    logging.basicConfig(format='[%(levelname)-8s] %(name)17s - %(funcName)-15s: %(message)s', level=logging.INFO)
+    bot = Updater(token=cfg.token_get())
+    bot.dispatcher.add_handler(CommandHandler('start', bot_cmd_start))
+    bot.start_polling()
+    return bot
+
 
 def main_tail(logger, args, cfg, bot):
     global stats
@@ -79,6 +102,7 @@ def main_tail(logger, args, cfg, bot):
                     stats['incidents_silenced'] += 1
                 else:
                     logger.info("sending notification for incident #%d" % i)
+                    bot.dispatcher.bot.send_message(chat_id=cfg.chatid_get(), text=msg, parse_mode=ParseMode.HTML)
                     stats['incidents_sent'] += 1
 
                 del incidents[k]
@@ -102,7 +126,8 @@ def main():
         logger.error("Aborting")
         sys.exit(3)
 
-    bot = None
+    bot = setup_bot(logger, cfg)
+
     main_tail(logger, args, cfg, bot)
 
     logger.info("Exiting successfully. A job well done!")
