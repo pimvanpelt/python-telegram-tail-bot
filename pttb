@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import sys
+import logging
+from config import Config
+
+try:
+    import argparse
+except ImportError:
+    print("ERROR: install argparse manually: sudo pip install argparse")
+    sys.exit(2)
+
+def setup_logging(debug=False):
+    if debug:
+        level = logging.DEBUG
+    else:
+        level = logging.INFO
+    logger = logging.getLogger('pttb')
+    logger.setLevel(level)
+    formatter = logging.Formatter('[%(levelname)-8s] %(name)17s - %(funcName)-15s: %(message)s')
+    ch = logging.StreamHandler()
+    ch.setLevel(level)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    return logger
+
+
+def main():
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('-v', dest='verbose', action='store_true', help="""Enable verbosity, default False""")
+    parser.add_argument('-d', dest='debug', action='store_true', help="""Enable debug, default False""")
+    parser.add_argument('-c', '--config', dest='config', default="/etc/pttb/pttb.yaml", type=str, 
+            help="""Location of the YAML config file, default /etc/pttb/pttb.yaml""")
+
+    args = parser.parse_args()
+    logger = setup_logging(debug=args.debug)
+    if args.debug:
+        logger.debug("Arguments: %s" % args)
+
+    cfg = Config(config=args.config).read()
+
+if __name__ == "__main__":
+    main()
+

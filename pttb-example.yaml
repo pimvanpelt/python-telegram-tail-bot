@@ -1,0 +1,24 @@
+telegram:
+  token: <string>
+  chat-id: <int>
+
+triggers:
+  - regexp: "ospf[46]:.*changed state.*to Down"
+    duration: 10
+    message: "❌ DOWN - OSPF Neighbor lost"
+  - regexp: "ospf[46]:.*changed state.*to Full"
+    duration: 10
+    message: "✅ UP - OSPF Neighbor established"
+  - regexp: "bfd[0-9]:.*changed state.*to Down"
+    duration: 10
+    message: "❌ DOWN - BFD Adjacency lost"
+  - regexp: "bfd[0-9]:.*changed state.*to Up"
+    duration: 10
+    message: "✅ UP - BFD Adjacency established"
+
+silences:
+  - regexp: "nlams0|defra0"
+    expiry: 1645789487  ## Fri 25 Feb 2022 12:44:47 PM CET
+  - regexp: "test"
+    expiry: 1645789487  ## Fri 25 Feb 2022 12:44:47 PM CET
+
