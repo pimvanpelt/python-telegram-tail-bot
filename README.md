@@ -19,7 +19,8 @@ pip install pyinstaller
 pip install argparse
 pip install pyyaml
 pip install python-telegram-bot --upgrade
-./pttb --config ./pttconfig.yaml
+pyinstaller pttb --onefile
+dist/pttb --config ./pttconfig.yaml
 ```
 
 ## Details
