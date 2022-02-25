@@ -4,16 +4,21 @@
 import sys
 import logging
 from config import Config
+from incident import Incident
 import time
 import subprocess
 import select
 import os
+import re
 
 try:
     import argparse
 except ImportError:
     print("ERROR: install argparse manually: sudo pip install argparse")
     sys.exit(2)
+
+global stats
+stats = { 'starttime': 0, 'loglines_read': 0, 'incidents_created': 0, 'incidents_silenced': 0, 'incidents_sent': 0 }
 
 def setup_logging(debug=False):
     if debug:
@@ -29,7 +34,8 @@ def setup_logging(debug=False):
     logger.addHandler(ch)
     return logger
 
-def main_tail(logger, args, bot):
+def main_tail(logger, args, cfg, bot):
+    global stats
     if not os.path.exists(args.file):
         logger.warning("file %s currently does not exist" % args.file)
 
@@ -37,13 +43,45 @@ def main_tail(logger, args, bot):
     p = select.poll()
     p.register(f.stdout)
 
+    incidents = {}
+    stats['starttime'] = time.time()
     while True:
         if p.poll(1.0):
-            line = f.stdout.readline().strip()
-            logger.debug("Tail: %s" % line)
+            line = f.stdout.readline().decode('utf-8').strip()
+            stats['loglines_read'] += 1
+            logger.debug("line: %s" % line)
+
+            for t in cfg.trigger_list():
+                if re.search(t['regexp'], line):
+                    logger.debug("trigger '%s' matched line '%s'" % (t['regexp'], line))
+                    if not t['regexp'] in incidents:
+                        i = Incident(t['regexp'], t['duration'], t['message'])
+                        logger.info("incident #%d created for trigger '%s'" % (i.getid(), t['regexp']))
+                        incidents[t['regexp']] = i
+                        stats['incidents_created'] += 1
+                    incidents[t['regexp']].feedlog(line)
         else:
-          logger.debug("timeout")
-          time.sleep(0.25)
+            time.sleep(0.25)
+
+        for k in list(incidents):
+            if incidents[k].expired():
+                i = incidents[k].getid()
+                msg = incidents[k].render()
+                logger.debug("incident #%d expired, message '%s'" % (i, repr(msg)))
+
+                silence = False
+                for s in cfg.silence_list():
+                    if re.search(s['regexp'], msg):
+                        logger.debug("silence '%s' matched message for incident #%d" % (s['regexp'], i))
+                        silence = True
+                if silence:
+                    logger.warning("silencing notification for incident #%d" % i)
+                    stats['incidents_silenced'] += 1
+                else:
+                    logger.info("sending notification for incident #%d" % i)
+                    stats['incidents_sent'] += 1
+
+                del incidents[k]
     return
 
 def main():
@@ -65,7 +103,7 @@ def main():
         sys.exit(3)
 
     bot = None
-    main_tail(logger, args, bot)
+    main_tail(logger, args, cfg, bot)
 
     logger.info("Exiting successfully. A job well done!")
     sys.exit(0)
