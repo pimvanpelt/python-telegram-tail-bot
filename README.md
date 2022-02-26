@@ -11,7 +11,7 @@ A simple Python Telegram Tail Bot, or _pttb_ for short, that:
 * Sending to a predefined Telegram group chat, those incidents which aren't silenced
 
 
-## Install
+## Building
 
 ```
 sudo apt install python3-pip
@@ -20,8 +20,27 @@ pip install argparse
 pip install pyyaml
 pip install python-telegram-bot --upgrade
 pyinstaller pttb --onefile
-vi pttb-example.yaml ## or emacs if you're so inclined; add your token and chat-id
+vi pttb-example.yaml ## or emacs if you're so inclined; add your token and chat-id from Telegram
 dist/pttb --config ./pttb-example.yaml
+```
+
+## Install
+
+Instructions below are for Debian/Ubuntu only. The bot will work on other operating systems, but persistent
+startup and config management are beyond the scope of this README. The `pttb.service` file runs the binary
+as `nobody:adm` so to enable config persistence (when users add triggers and silences), make sure that the
+config file is writable by either user=nobody or group=adm (or both).
+
+```
+sudo mkdir -p /usr/local/bin /etc/pttb/
+sudo cp pttb /usr/local/bin/
+sudo cp pttb.service /lib/systemd/system/
+sudo cp pttb-example.yaml /etc/pttb/pttb.yaml
+sudo chmod 664 /etc/pttb/pttb.yaml
+sudo chown nobody:adm /etc/pttb/pttb.yaml
+sudo vi /etc/pttb/pttb.yaml ## or emacs, add your production token and chat-id from Telegram
+systemctl enable pttb
+systemctl start pttb
 ```
 
 ## Details
@@ -38,7 +57,7 @@ restarted and upgraded:
   * regular expression to match any incident message data in
   * an expiry timestamp
 
-The bot will start up, announce itself on the `chat-id` group, and then listen on Telegram for the following
+The bot will start up, announce itself on the `chat-id` Telegram group, and then listen on Telegram for the following
 commands:
 
 * **/help** - a list of available commands
