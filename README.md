@@ -70,6 +70,10 @@ commands:
 * **/silence add &lt;regexp&gt; [duration]** - with one parameter, set a default silence for 1d; optionally
   add a duration in the form of `[1-9][0-9]*([hdm])` which defaults to hours (and can be days or minutes).
 * **/silence del &lt;idx&gt;** - with one parameter, remove the silence with that index (use /silence to see the list).
+* **/stfu [duration]** - a shorthand for a silence with regular expression `.*`, will suppress all notifications, with a
+  duration similar to the **/silence add** subcommand.
+* **/stats** - shows some runtime statistics, notably how many loglines were processed, how many incidents created,
+  and how many were sent or suppressed due to a silence.
 
 It will save its configuration file any time a silence or trigger is added or deleted, so make sure that the user running
 the bot has write access to its configurationfile. The bot will (obviously) start sending incidents that are not silenced
