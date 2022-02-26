@@ -62,13 +62,14 @@ commands:
 
 * **/help** - a list of available commands
 * **/trigger** - without parameters, list the current triggers
-* **/trigger add &lt;regexp&gt; [duration]** - with one parameter set a trigger on a regular expression. Optionally,
-  add a duration in seconds between [0..3600>, within which additional matched loglines will be added to the
-  same incident.
+* **/trigger add &lt;regexp&gt; [duration] [&lt;message&gt;]** - with one parameter set a trigger on a regular expression.
+  Optionally, add a duration in seconds between [0..3600>, within which additional matched loglines will be added to the
+  same incident, and an optional message to include in the Telegram alert.
 * **/trigger del &lt;idx&gt;** - with one parameter, remove the trigger with that index (use /trigger to see the list).
-* **/silence** - without parameters, list the current silences
-* **/silence add &lt;regexp&gt; [duration]** - with one parameter, set a default silence for 1d; optionally
-  add a duration in the form of `[1-9][0-9]*([hdm])` which defaults to hours (and can be days or minutes).
+* **/silence** - without parameters, list the current silences.
+* **/silence add &lt;regexp&gt; [duration] [&lt;reason&gt;]** - with one parameter, set a default silence for 1d; optionally
+  add a duration in the form of `[1-9][0-9]*([hdm])` which defaults to hours (and can be days or minutes), and an optional 
+  reason for the silence.
 * **/silence del &lt;idx&gt;** - with one parameter, remove the silence with that index (use /silence to see the list).
 * **/stfu [duration]** - a shorthand for a silence with regular expression `.*`, will suppress all notifications, with a
   duration similar to the **/silence add** subcommand.
