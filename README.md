@@ -5,10 +5,10 @@ A simple Python Telegram Tail Bot, or _pttb_ for short, that:
 * Tails the syslog logstream from one or more files, ie `/var/log/ipng.log`
 * Pattern matches on loglines, after which an `incident` is created
 * Waits for a predefined number of seconds (which may be zero) to see if more loglines match, adding them to
-  the `incident`
-* Holds the `incident` against a list of known regular expression `silences`, throwing away those which
+  the incident
+* Holds the incident against a list of known regular expression `silences`, throwing away those which
   aren't meant to be distributed
-* Sending to a predefined group chat, those incidents which aren't silenced
+* Sending to a predefined Telegram group chat, those incidents which aren't silenced
 
 
 ## Install
@@ -29,7 +29,7 @@ The bot should allow for the following features, based on a YAML configuration f
 restarted and upgraded:
 
 * A (mandatory) `TOKEN` to interact with Telegram API
-* A (mandatory) single `chat-id` - messages will be sent to this Telegram group chat
+* A (mandatory) single `chat-id` - incidents will be sent to this Telegram group chat
 * An (optional) list of logline triggers, consisting of:
   * regular expression to match in the logstream
   * grace period to coalesce additional loglines of the same trigger into the incident
@@ -54,3 +54,13 @@ commands:
 It will save its configuration file any time a silence or trigger is added or deleted, so make sure that the user running
 the bot has write access to its configurationfile. The bot will (obviously) start sending incidents that are not silenced
 to the `chat-id` group-chat when they occur.
+
+## Notes
+
+This software is not done :-) This README describes the intended endstate, not the current state. Several functions do not
+work at the moment, but they should be done in Q1'2022. 
+
+If you file feature request issues, please expect the response "contributions welcome", which means that I am not able or
+willing to satisfy external needs beyond critical bugreports that affect my own use cases. If you'd like to extend this
+FOSS software, please send a PR with working code and accompanied by an explanation in a github issue. If you feel entitled
+to support, feel free to mail sales@ipng.ch for a quote.
