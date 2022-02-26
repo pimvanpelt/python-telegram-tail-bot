@@ -20,7 +20,8 @@ pip install argparse
 pip install pyyaml
 pip install python-telegram-bot --upgrade
 pyinstaller pttb --onefile
-dist/pttb --config ./pttconfig.yaml
+vi pttb-example.yaml ## or emacs if you're so inclined; add your token and chat-id
+dist/pttb --config ./pttb-example.yaml
 ```
 
 ## Details
